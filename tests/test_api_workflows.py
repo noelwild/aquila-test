@@ -101,21 +101,13 @@ def setup_client(tmp_path):
 
 def test_validation_and_publish(tmp_path):
     client, dm, pm = setup_client(tmp_path)
-    # register user and get token
-    client.post("/auth/register", data={"username": "u", "password": "p"})
-    server.db.users.store["u"]["roles"] = ["admin"]
-    resp = client.post("/auth/token", data={"username": "u", "password": "p"})
-    token = resp.json()["access_token"]
-    headers = {"Authorization": f"Bearer {token}"}
-
-    r = client.post(f"/api/validate/{dm.dmc}", headers=headers)
+    r = client.post(f"/api/validate/{dm.dmc}")
     assert r.status_code == 200
     assert r.json()["brex_valid"] is True
 
     r = client.post(
         f"/api/publication-modules/{pm.pm_code}/publish",
         json={"formats": ["xml"], "variants": ["00"]},
-        headers=headers,
     )
     assert r.status_code == 200
     resp = r.json()

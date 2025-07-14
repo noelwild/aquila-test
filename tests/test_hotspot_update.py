@@ -90,15 +90,11 @@ def setup_client(tmp_path):
 
 def test_icn_hotspot_update(tmp_path):
     client, dm, icn = setup_client(tmp_path)
-    client.post("/auth/register", data={"username": "u", "password": "p"})
-    token = client.post("/auth/token", data={"username": "u", "password": "p"}).json()["access_token"]
-    headers = {"Authorization": f"Bearer {token}"}
 
     before = server.db.data_modules.docs[0]["updated_at"]
 
     r = client.put(
         f"/api/icns/{icn['icn_id']}",
-        headers=headers,
         json={"hotspots": [{"x": 1, "y": 1, "width": 10, "height": 10, "description": "part"}]},
     )
     assert r.status_code == 200
