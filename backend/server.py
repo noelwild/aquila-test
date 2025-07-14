@@ -917,7 +917,7 @@ async def publish_publication_module(
 async def test_text_provider(text: str, task_type: str = "classify"):
     """Test text provider."""
     try:
-        from .ai_providers.base import TextProcessingRequest
+        from ai_providers.base import TextProcessingRequest
 
         text_provider = ProviderFactory.create_text_provider()
         request = TextProcessingRequest(text=text, task_type=task_type)
@@ -941,7 +941,7 @@ async def test_text_provider(text: str, task_type: str = "classify"):
 async def test_vision_provider(image_data: str, task_type: str = "caption"):
     """Test vision provider."""
     try:
-        from .ai_providers.base import VisionProcessingRequest
+        from ai_providers.base import VisionProcessingRequest
 
         vision_provider = ProviderFactory.create_vision_provider()
         request = VisionProcessingRequest(image_data=image_data, task_type=task_type)
