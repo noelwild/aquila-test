@@ -177,7 +177,8 @@ def test_ai_providers():
     try:
         response = requests.post(
             f"{API_BASE_URL}/test/text",
-            params={"task_type": "classify", "text": SAMPLE_TEXT}
+            params={"task_type": "classify", "text": SAMPLE_TEXT},
+            headers=get_auth_headers()
         )
         print_test_result("OpenAI Text Classification", response.status_code == 200, response.json())
     except Exception as e:
@@ -186,7 +187,8 @@ def test_ai_providers():
     try:
         response = requests.post(
             f"{API_BASE_URL}/test/text",
-            params={"task_type": "extract", "text": SAMPLE_TEXT}
+            params={"task_type": "extract", "text": SAMPLE_TEXT},
+            headers=get_auth_headers()
         )
         print_test_result("OpenAI Text Extraction", response.status_code == 200, response.json())
     except Exception as e:
@@ -195,7 +197,8 @@ def test_ai_providers():
     try:
         response = requests.post(
             f"{API_BASE_URL}/test/text",
-            params={"task_type": "rewrite", "text": SAMPLE_TEXT}
+            params={"task_type": "rewrite", "text": SAMPLE_TEXT},
+            headers=get_auth_headers()
         )
         print_test_result("OpenAI Text Rewrite", response.status_code == 200, response.json())
     except Exception as e:
@@ -208,7 +211,8 @@ def test_ai_providers():
     try:
         response = requests.post(
             f"{API_BASE_URL}/test/vision",
-            params={"task_type": "caption", "image_data": base64_image}
+            params={"task_type": "caption", "image_data": base64_image},
+            headers=get_auth_headers()
         )
         print_test_result("OpenAI Vision Caption", response.status_code == 200, response.json())
     except Exception as e:
@@ -217,7 +221,8 @@ def test_ai_providers():
     try:
         response = requests.post(
             f"{API_BASE_URL}/test/vision",
-            params={"task_type": "objects", "image_data": base64_image}
+            params={"task_type": "objects", "image_data": base64_image},
+            headers=get_auth_headers()
         )
         print_test_result("OpenAI Vision Objects", response.status_code == 200, response.json())
     except Exception as e:
@@ -226,7 +231,8 @@ def test_ai_providers():
     try:
         response = requests.post(
             f"{API_BASE_URL}/test/vision",
-            params={"task_type": "hotspots", "image_data": base64_image}
+            params={"task_type": "hotspots", "image_data": base64_image},
+            headers=get_auth_headers()
         )
         print_test_result("OpenAI Vision Hotspots", response.status_code == 200, response.json())
     except Exception as e:
@@ -236,13 +242,15 @@ def test_ai_providers():
     try:
         requests.post(
             f"{API_BASE_URL}/providers/set",
-            params={"text_provider": "anthropic", "vision_provider": "anthropic"}
+            params={"text_provider": "anthropic", "vision_provider": "anthropic"},
+            headers=get_auth_headers()
         )
         
         # Test text processing with Anthropic
         response = requests.post(
             f"{API_BASE_URL}/test/text",
-            params={"task_type": "classify", "text": SAMPLE_TEXT}
+            params={"task_type": "classify", "text": SAMPLE_TEXT},
+            headers=get_auth_headers()
         )
         print_test_result("Anthropic Text Classification", response.status_code == 200, response.json())
     except Exception as e:
@@ -251,7 +259,8 @@ def test_ai_providers():
     try:
         response = requests.post(
             f"{API_BASE_URL}/test/vision",
-            params={"task_type": "caption", "image_data": base64_image}
+            params={"task_type": "caption", "image_data": base64_image},
+            headers=get_auth_headers()
         )
         print_test_result("Anthropic Vision Caption", response.status_code == 200, response.json())
     except Exception as e:
@@ -261,7 +270,8 @@ def test_ai_providers():
     try:
         requests.post(
             f"{API_BASE_URL}/providers/set",
-            params={"text_provider": "openai", "vision_provider": "openai"}
+            params={"text_provider": "openai", "vision_provider": "openai"},
+            headers=get_auth_headers()
         )
     except Exception:
         pass
