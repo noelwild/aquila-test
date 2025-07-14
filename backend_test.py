@@ -465,7 +465,8 @@ def test_publication_module_management(dmc_list):
         }
         response = requests.post(
             f"{API_BASE_URL}/publication-modules",
-            json=pm_data
+            json=pm_data,
+            headers=get_auth_headers()
         )
         print_test_result("Create Publication Module", response.status_code == 200, response.json())
     except Exception as e:
@@ -473,7 +474,7 @@ def test_publication_module_management(dmc_list):
     
     # Test get all publication modules
     try:
-        response = requests.get(f"{API_BASE_URL}/publication-modules")
+        response = requests.get(f"{API_BASE_URL}/publication-modules", headers=get_auth_headers())
         print_test_result("Get Publication Modules", response.status_code == 200, 
                          f"Found {len(response.json())} publication modules")
     except Exception as e:
@@ -481,7 +482,7 @@ def test_publication_module_management(dmc_list):
     
     # Test get specific publication module
     try:
-        response = requests.get(f"{API_BASE_URL}/publication-modules/{pm_code}")
+        response = requests.get(f"{API_BASE_URL}/publication-modules/{pm_code}", headers=get_auth_headers())
         print_test_result(f"Get Publication Module {pm_code}", response.status_code == 200, response.json())
     except Exception as e:
         print_test_result(f"Get Publication Module {pm_code}", False, error=str(e))
@@ -495,7 +496,8 @@ def test_publication_module_management(dmc_list):
         }
         response = requests.post(
             f"{API_BASE_URL}/publication-modules/{pm_code}/publish",
-            json=publish_options
+            json=publish_options,
+            headers=get_auth_headers()
         )
         print_test_result(f"Publish Publication Module {pm_code}", response.status_code == 200, response.json())
     except Exception as e:
