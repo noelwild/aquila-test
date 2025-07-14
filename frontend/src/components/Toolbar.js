@@ -241,6 +241,12 @@ const Toolbar = () => {
     {showProjectModal && (
       <ProjectModal onClose={() => setShowProjectModal(false)} />
     )}
+    {showAIProviderModal && (
+      <AIProviderModal onClose={() => setShowAIProviderModal(false)} />
+    )}
+    {showPublishModal && (
+      <PublishModal onClose={() => setShowPublishModal(false)} />
+    )}
     </>
   );
 };
