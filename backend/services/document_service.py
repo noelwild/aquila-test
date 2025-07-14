@@ -25,7 +25,7 @@ import re
 import logging
 from datetime import datetime
 
-from ..models.document import (
+from models.document import (
     UploadedDocument,
     ICN,
     DataModule,
