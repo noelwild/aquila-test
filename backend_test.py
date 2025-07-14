@@ -388,7 +388,7 @@ def test_icn_management():
     
     # Test get all ICNs
     try:
-        response = requests.get(f"{API_BASE_URL}/icns")
+        response = requests.get(f"{API_BASE_URL}/icns", headers=get_auth_headers())
         print_test_result("Get ICNs", response.status_code == 200, 
                          f"Found {len(response.json())} ICNs")
         
@@ -406,14 +406,14 @@ def test_icn_management():
     
     # Test get specific ICN
     try:
-        response = requests.get(f"{API_BASE_URL}/icns/{icn_id}")
+        response = requests.get(f"{API_BASE_URL}/icns/{icn_id}", headers=get_auth_headers())
         print_test_result(f"Get ICN {icn_id}", response.status_code == 200, response.json())
     except Exception as e:
         print_test_result(f"Get ICN {icn_id}", False, error=str(e))
     
     # Test get ICN image
     try:
-        response = requests.get(f"{API_BASE_URL}/icns/{icn_id}/image")
+        response = requests.get(f"{API_BASE_URL}/icns/{icn_id}/image", headers=get_auth_headers())
         print_test_result(f"Get ICN Image {icn_id}", 
                          response.status_code == 200, 
                          f"Image size: {len(response.content)} bytes")
@@ -427,7 +427,8 @@ def test_icn_management():
         }
         response = requests.put(
             f"{API_BASE_URL}/icns/{icn_id}",
-            json=update_data
+            json=update_data,
+            headers=get_auth_headers()
         )
         print_test_result(f"Update ICN {icn_id}", response.status_code == 200, response.json())
     except Exception as e:
