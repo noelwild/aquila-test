@@ -4,7 +4,7 @@ from typing import Optional
 from jose import jwt
 from passlib.context import CryptContext
 
-from ..models.user import User
+from models.user import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
