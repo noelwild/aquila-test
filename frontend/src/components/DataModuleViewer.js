@@ -203,6 +203,16 @@ const DataModuleViewer = ({ dataModule, variant }) => {
                 </div>
               </div>
             )}
+
+            {/* AI Output */}
+            {dataModule.ai_suggestions && Object.keys(dataModule.ai_suggestions).length > 0 && (
+              <div className="bg-gray-800/20 border border-gray-600/50 rounded p-3">
+                <h4 className="text-sm font-medium text-gray-300 mb-2">AI Output:</h4>
+                <pre className="text-xs whitespace-pre-wrap break-words">
+                  {JSON.stringify(dataModule.ai_suggestions, null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
         )}
       </div>

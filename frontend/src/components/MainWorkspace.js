@@ -3,6 +3,7 @@ import { FileText } from 'lucide-react';
 import { useAquila } from '../contexts/AquilaContext';
 import DocumentViewer from './DocumentViewer';
 import DataModuleViewer from './DataModuleViewer';
+import XMLEditor from './XMLEditor';
 
 const MainWorkspace = () => {
   const {
@@ -66,48 +67,18 @@ const MainWorkspace = () => {
         <div className="aquila-panel">
           <div className="aquila-panel-header">
             <h3 className="text-sm font-medium">XML Editor - Verbatim</h3>
-            <div className="flex items-center gap-2">
-              <button className="aquila-button-secondary text-xs px-2 py-1">
-                Validate
-              </button>
-              <button className="aquila-button-secondary text-xs px-2 py-1">
-                Format
-              </button>
-            </div>
           </div>
           <div className="aquila-panel-content">
-            <div className="h-full bg-gray-900 p-4 rounded">
-              <div className="text-green-400 font-mono text-sm">
-                {'<?xml version="1.0" encoding="UTF-8"?>'}<br />
-                {'<dmodule>'}<br />
-                {'  <!-- XML content will appear here -->'}<br />
-                {'</dmodule>'}
-              </div>
-            </div>
+            <XMLEditor content={verbatim?.xml_content || ''} readOnly={true} />
           </div>
         </div>
 
         <div className="aquila-panel">
           <div className="aquila-panel-header">
             <h3 className="text-sm font-medium">XML Editor - STE</h3>
-            <div className="flex items-center gap-2">
-              <button className="aquila-button-secondary text-xs px-2 py-1">
-                Validate
-              </button>
-              <button className="aquila-button-secondary text-xs px-2 py-1">
-                Format
-              </button>
-            </div>
           </div>
           <div className="aquila-panel-content">
-            <div className="h-full bg-gray-900 p-4 rounded">
-              <div className="text-green-400 font-mono text-sm">
-                {'<?xml version="1.0" encoding="UTF-8"?>'}<br />
-                {'<dmodule>'}<br />
-                {'  <!-- STE XML content will appear here -->'}<br />
-                {'</dmodule>'}
-              </div>
-            </div>
+            <XMLEditor content={ste?.xml_content || ''} readOnly={true} />
           </div>
         </div>
 
