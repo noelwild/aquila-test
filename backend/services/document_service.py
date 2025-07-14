@@ -370,6 +370,8 @@ class DocumentService:
     ) -> List[DataModule]:
         await self.load_settings()
         text_provider = ProviderFactory.create_text_provider()
+        logs: List[Dict[str, Any]] = []
+        logs.append({"timestamp": datetime.utcnow(), "message": "Begin AI processing"})
         if self.db is not None:
             extra_text = await self.gather_all_documents_text(exclude_id=document.id)
             if extra_text:
@@ -379,11 +381,13 @@ class DocumentService:
                 text=text_content, task_type="classify"
             )
             class_response = await text_provider.classify_document(classification)
+            logs.append({"timestamp": datetime.utcnow(), "message": f"classification: {class_response.result}"})
             if "error" in class_response.result:
                 raise Exception(class_response.result["error"])
 
             extract_req = TextProcessingRequest(text=text_content, task_type="extract")
             extract_res = await text_provider.extract_structured_data(extract_req)
+            logs.append({"timestamp": datetime.utcnow(), "message": f"extraction: {extract_res.result}"})
             if "error" in extract_res.result:
                 raise Exception(extract_res.result["error"])
 
@@ -417,6 +421,16 @@ class DocumentService:
 
             rewrite_req = TextProcessingRequest(text=text_content, task_type="rewrite")
             rewrite_res = await text_provider.rewrite_to_ste(rewrite_req)
+            logs.append({"timestamp": datetime.utcnow(), "message": f"rewrite: {rewrite_res.result}"})
+            logs.append({"timestamp": datetime.utcnow(), "message": "AI processing completed"})
+
+            verbatim.processing_logs = logs.copy()
+            verbatim.ai_suggestions = {
+                "classification": class_response.result,
+                "extraction": extract_res.result,
+                "rewrite": rewrite_res.result,
+            }
+            verbatim.xml_content = self.render_data_module_xml(verbatim)
 
             modules = [verbatim]
             if "error" not in rewrite_res.result:
@@ -436,10 +450,18 @@ class DocumentService:
                     dm_refs=dm_refs,
                     icn_refs=icn_refs,
                 )
+                ste_dm.processing_logs = logs.copy()
+                ste_dm.ai_suggestions = {
+                    "classification": class_response.result,
+                    "extraction": extract_res.result,
+                    "rewrite": rewrite_res.result,
+                }
+                ste_dm.xml_content = self.render_data_module_xml(ste_dm)
                 modules.append(ste_dm)
             return modules
         except Exception as e:
             logger.error(f"Error processing document with AI: {e}")
+            logs.append({"timestamp": datetime.utcnow(), "message": f"Error: {e}"})
             basic = DataModule(
                 dmc=self._generate_dmc({"dm_type": "GEN", "title": document.filename}),
                 title=document.filename,
@@ -452,6 +474,8 @@ class DocumentService:
                 dm_refs=[],
                 icn_refs=[],
             )
+            basic.processing_logs = logs
+            basic.xml_content = self.render_data_module_xml(basic)
             return [basic]
 
     def _generate_dmc(self, classification_result: dict, variant: str = "00") -> str:
