@@ -28,6 +28,9 @@ API_BASE_URL = "http://localhost:8001/api"
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
+# Authentication token
+AUTH_TOKEN = None
+
 # Test data
 SAMPLE_TEXT = """
 The hydraulic system of the aircraft provides power for the operation of the landing gear, 
