@@ -3,6 +3,8 @@
 import anthropic
 import base64
 import time
+import logging
+import re
 from typing import Dict, Any, List
 from .base import (
     TextProvider,
@@ -16,15 +18,46 @@ import os
 import json
 import asyncio
 
+logger = logging.getLogger(__name__)
+
 
 class AnthropicTextProvider(TextProvider):
     """Anthropic text processing provider."""
-    
+
     def __init__(self, model: str | None = None):
         self.client = anthropic.AsyncAnthropic(
             api_key=os.environ.get("ANTHROPIC_API_KEY")
         )
         self.model = model or os.environ.get("TEXT_MODEL", "claude-3-sonnet-20240229")
+
+    def _parse_json(self, text: str) -> Any:
+        """Safely parse JSON returned by the API. Returns an empty dict on failure."""
+        cleaned = text.strip()
+        cleaned = (
+            cleaned.replace("“", '"')
+            .replace("”", '"')
+            .replace("‘", "'")
+            .replace("’", "'")
+        )
+        cleaned = re.sub(r",\s*([}\]])", r"\1", cleaned)
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError:
+            match = re.search(r"{.*}", cleaned, re.DOTALL)
+            if match:
+                try:
+                    inner = re.sub(r",\s*([}\]])", r"\1", match.group(0))
+                    inner = (
+                        inner.replace("“", '"')
+                        .replace("”", '"')
+                        .replace("‘", "'")
+                        .replace("’", "'")
+                    )
+                    return json.loads(inner)
+                except json.JSONDecodeError:
+                    pass
+            logger.warning("Failed to parse JSON from AI response")
+            return {}
     
     async def classify_document(self, request: TextProcessingRequest) -> TextProcessingResponse:
         """Classify document type and extract basic metadata."""
@@ -58,7 +91,7 @@ class AnthropicTextProvider(TextProvider):
                 ]
             )
             
-            result = json.loads(response.content[0].text)
+            result = self._parse_json(response.content[0].text)
             processing_time = time.time() - start_time
             
             return TextProcessingResponse(
@@ -119,7 +152,7 @@ class AnthropicTextProvider(TextProvider):
                 ]
             )
             
-            result = json.loads(response.content[0].text)
+            result = self._parse_json(response.content[0].text)
             processing_time = time.time() - start_time
             
             return TextProcessingResponse(
@@ -174,7 +207,7 @@ class AnthropicTextProvider(TextProvider):
                 ]
             )
             
-            result = json.loads(response.content[0].text)
+            result = self._parse_json(response.content[0].text)
             processing_time = time.time() - start_time
             
             return TextProcessingResponse(
@@ -212,7 +245,7 @@ class AnthropicTextProvider(TextProvider):
                 messages=[{"role": "user", "content": prompt}]
             )
 
-            result = json.loads(response.content[0].text)
+            result = self._parse_json(response.content[0].text)
             processing_time = time.time() - start_time
 
             return TextProcessingResponse(
