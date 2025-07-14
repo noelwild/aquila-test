@@ -54,7 +54,46 @@ def create_test_image():
 def image_to_base64(image_data):
     return base64.b64encode(image_data).decode('utf-8')
 
-# Helper function to print test results
+# Helper function to get auth headers
+def get_auth_headers():
+    if AUTH_TOKEN:
+        return {"Authorization": f"Bearer {AUTH_TOKEN}"}
+    return {}
+
+# Authentication function
+def authenticate():
+    global AUTH_TOKEN
+    logger.warning("\n=== Authenticating ===\n")
+    
+    # First, register a test user
+    try:
+        response = requests.post(
+            "http://localhost:8001/auth/register",
+            data={"username": "testuser", "password": "testpass123"}
+        )
+        if response.status_code == 200:
+            print_test_result("User Registration", True, response.json())
+        else:
+            print_test_result("User Registration", False, response.json())
+    except Exception as e:
+        print_test_result("User Registration", False, error=str(e))
+    
+    # Login to get token
+    try:
+        response = requests.post(
+            "http://localhost:8001/auth/token",
+            data={"username": "testuser", "password": "testpass123"}
+        )
+        if response.status_code == 200:
+            AUTH_TOKEN = response.json()["access_token"]
+            print_test_result("User Login", True, {"token_received": True})
+            return True
+        else:
+            print_test_result("User Login", False, response.json())
+            return False
+    except Exception as e:
+        print_test_result("User Login", False, error=str(e))
+        return False
 def print_test_result(test_name, success, response=None, error=None):
     if success:
         logger.warning(f"✅ {test_name}: PASSED")
