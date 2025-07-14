@@ -287,7 +287,8 @@ def test_document_management():
     try:
         response = requests.post(
             f"{API_BASE_URL}/documents/upload",
-            files=files
+            files=files,
+            headers=get_auth_headers()
         )
         print_test_result("Document Upload", response.status_code == 200, response.json())
         document_id = response.json().get('document_id')
@@ -301,7 +302,7 @@ def test_document_management():
     
     # Test get documents
     try:
-        response = requests.get(f"{API_BASE_URL}/documents")
+        response = requests.get(f"{API_BASE_URL}/documents", headers=get_auth_headers())
         print_test_result("Get Documents", response.status_code == 200, 
                          f"Found {len(response.json())} documents")
     except Exception as e:
@@ -309,14 +310,14 @@ def test_document_management():
     
     # Test get specific document
     try:
-        response = requests.get(f"{API_BASE_URL}/documents/{document_id}")
+        response = requests.get(f"{API_BASE_URL}/documents/{document_id}", headers=get_auth_headers())
         print_test_result("Get Document", response.status_code == 200, response.json())
     except Exception as e:
         print_test_result("Get Document", False, error=str(e))
     
     # Test document processing
     try:
-        response = requests.post(f"{API_BASE_URL}/documents/{document_id}/process")
+        response = requests.post(f"{API_BASE_URL}/documents/{document_id}/process", headers=get_auth_headers())
         print_test_result("Process Document", response.status_code == 200, response.json())
         
         # Extract data module IDs for later tests
