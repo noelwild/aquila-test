@@ -2,10 +2,10 @@
 
 import os
 from typing import Tuple
-from .base import TextProvider, VisionProvider
-from .openai_provider import OpenAITextProvider, OpenAIVisionProvider
-from .anthropic_provider import AnthropicTextProvider, AnthropicVisionProvider
-from .local_provider import LocalTextProvider, LocalVisionProvider
+from ai_providers.base import TextProvider, VisionProvider
+from ai_providers.openai_provider import OpenAITextProvider, OpenAIVisionProvider
+from ai_providers.anthropic_provider import AnthropicTextProvider, AnthropicVisionProvider
+from ai_providers.local_provider import LocalTextProvider, LocalVisionProvider
 
 
 class ProviderFactory:
