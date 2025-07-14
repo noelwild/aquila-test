@@ -29,7 +29,7 @@ const Toolbar = () => {
     locked,
     setLocked,
     documents,
-    processDocument,
+    processDocumentStream,
     brexReady,
     projectName,
     createProject,
@@ -83,7 +83,7 @@ const Toolbar = () => {
     setProcessing(true);
     try {
       for (const doc of documents) {
-        await processDocument(doc.id);
+        await processDocumentStream(doc.id);
       }
     } catch (error) {
       console.error('Processing failed:', error);

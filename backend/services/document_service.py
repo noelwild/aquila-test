@@ -3,7 +3,7 @@
 import hashlib
 import base64
 import aiofiles
-from typing import List, Dict, Any, Callable
+from typing import List, Dict, Any, Callable, AsyncGenerator
 from pathlib import Path
 import shutil
 import os
@@ -477,6 +477,118 @@ class DocumentService:
             basic.processing_logs = logs
             basic.xml_content = self.render_data_module_xml(basic)
             return [basic]
+
+    async def process_document_streaming(
+        self, document: UploadedDocument, text_content: str
+    ) -> AsyncGenerator[DataModule, None]:
+        """Yield data modules one by one while processing with AI."""
+        await self.load_settings()
+        text_provider = ProviderFactory.create_text_provider()
+        logs: List[Dict[str, Any]] = []
+        logs.append({"timestamp": datetime.utcnow(), "message": "Begin AI processing"})
+
+        if self.db is not None:
+            extra_text = await self.gather_all_documents_text(exclude_id=document.id)
+            if extra_text:
+                text_content = f"{text_content}\n{extra_text}"[:10000]
+
+        try:
+            classification = TextProcessingRequest(text=text_content, task_type="classify")
+            class_response = await text_provider.classify_document(classification)
+            logs.append({"timestamp": datetime.utcnow(), "message": f"classification: {class_response.result}"})
+            if "error" in class_response.result:
+                raise Exception(class_response.result["error"])
+
+            extract_req = TextProcessingRequest(text=text_content, task_type="extract")
+            extract_res = await text_provider.extract_structured_data(extract_req)
+            logs.append({"timestamp": datetime.utcnow(), "message": f"extraction: {extract_res.result}"})
+            if "error" in extract_res.result:
+                raise Exception(extract_res.result["error"])
+
+            refs = extract_res.result.get("references", [])
+            dm_refs = [r["reference"] for r in refs if r.get("type") == "dm"]
+            icn_refs = [
+                self._derive_lcn(r["reference"])
+                for r in refs
+                if r.get("type") in {"figure", "image", "table"}
+            ]
+
+            warn_provider = extract_res.result.get("warnings", [])
+            caution_provider = extract_res.result.get("cautions", [])
+            warn_text, caution_text = self._parse_warnings_cautions(text_content)
+            warnings = list({*warn_provider, *warn_text})
+            cautions = list({*caution_provider, *caution_text})
+            wc_prefix = self._format_warnings_cautions(warnings, cautions)
+
+            verbatim = DataModule(
+                dmc=self._generate_dmc(class_response.result),
+                title=class_response.result.get("title", "Untitled Document"),
+                dm_type=DMTypeEnum(class_response.result.get("dm_type", "GEN")),
+                info_variant="00",
+                content="{}\n{}".format(wc_prefix, text_content).strip(),
+                source_document_id=document.id,
+                security_level=document.security_level,
+                processing_status="completed",
+                dm_refs=dm_refs,
+                icn_refs=icn_refs,
+            )
+
+            verbatim.processing_logs = logs.copy()
+            verbatim.ai_suggestions = {
+                "classification": class_response.result,
+                "extraction": extract_res.result,
+            }
+            verbatim.xml_content = self.render_data_module_xml(verbatim)
+            yield verbatim
+
+            rewrite_req = TextProcessingRequest(text=text_content, task_type="rewrite")
+            rewrite_res = await text_provider.rewrite_to_ste(rewrite_req)
+            logs.append({"timestamp": datetime.utcnow(), "message": f"rewrite: {rewrite_res.result}"})
+            logs.append({"timestamp": datetime.utcnow(), "message": "AI processing completed"})
+
+            if "error" not in rewrite_res.result:
+                ste_dm = DataModule(
+                    dmc=self._generate_dmc(class_response.result, variant="01"),
+                    title=class_response.result.get("title", "Untitled Document"),
+                    dm_type=DMTypeEnum(class_response.result.get("dm_type", "GEN")),
+                    info_variant="01",
+                    content="{}\n{}".format(
+                        wc_prefix,
+                        rewrite_res.result.get("rewritten_text", text_content),
+                    ).strip(),
+                    source_document_id=document.id,
+                    security_level=document.security_level,
+                    ste_score=rewrite_res.result.get("ste_score", 0.0),
+                    processing_status="completed",
+                    dm_refs=dm_refs,
+                    icn_refs=icn_refs,
+                )
+                ste_dm.processing_logs = logs.copy()
+                ste_dm.ai_suggestions = {
+                    "classification": class_response.result,
+                    "extraction": extract_res.result,
+                    "rewrite": rewrite_res.result,
+                }
+                ste_dm.xml_content = self.render_data_module_xml(ste_dm)
+                yield ste_dm
+        except Exception as e:
+            logger.error(f"Error processing document with AI: {e}")
+            logs.append({"timestamp": datetime.utcnow(), "message": f"Error: {e}"})
+            basic = DataModule(
+                dmc=self._generate_dmc({"dm_type": "GEN", "title": document.filename}),
+                title=document.filename,
+                dm_type=DMTypeEnum.GEN,
+                info_variant="00",
+                content="{}\n{}".format(self._format_warnings_cautions(*self._parse_warnings_cautions(text_content)), text_content).strip(),
+                source_document_id=document.id,
+                security_level=document.security_level,
+                processing_status="error",
+                dm_refs=[],
+                icn_refs=[],
+            )
+            basic.processing_logs = logs
+            basic.xml_content = self.render_data_module_xml(basic)
+            yield basic
 
     def _generate_dmc(self, classification_result: dict, variant: str = "00") -> str:
         """Generate a fully S1000D compliant Data Module Code."""
