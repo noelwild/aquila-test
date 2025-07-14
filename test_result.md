@@ -316,6 +316,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "Added fields to choose text and vision model names"
+      - working: true
+        agent: "testing"
+        comment: "Fixed modal rendering issue in Toolbar component. AI Provider modal now opens correctly, displays all provider options (OpenAI, Anthropic, Local), allows provider switching, and saves configuration successfully. All functionality working as expected."
 
   - task: "Illustration Manager"
     implemented: true
