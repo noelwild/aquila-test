@@ -13,15 +13,10 @@ import BREXDesigner from './components/BREXDesigner';
 import PMBuilder from './components/PMBuilder';
 import AIProviderModal from './components/AIProviderModal';
 import PublishModal from './components/PublishModal';
-import Login from './components/Login';
 import AquilaContext from './contexts/AquilaContext';
 
 
 function App() {
-  const token = localStorage.getItem('aquila.jwt');
-  if (!token) {
-    return <Login />;
-  }
   return (
     <BrowserRouter>
       <AquilaProvider>

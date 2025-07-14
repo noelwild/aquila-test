@@ -16,10 +16,7 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorClient
-from passlib.context import CryptContext
 
 from backend.ai_providers.provider_factory import ProviderFactory
 from backend.brex_rules import apply_brex_rules
@@ -33,13 +30,7 @@ from backend.models.document import (
     PublicationModule,
     UploadedDocument,
 )
-from backend.models.user import User
-from backend.services.auth import (
-    authenticate_user,
-    create_access_token,
-    get_password_hash,
-    verify_password,
-)
+
 
 # Import services
 from backend.services.document_service import DocumentService
@@ -60,16 +51,7 @@ mongo_url = os.environ["MONGO_URL"]
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ["DB_NAME"]]
 
-# Auth configuration
-SECRET_KEY = os.environ.get("SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY environment variable not set")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
-ALGORITHM = "HS256"
 ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "*")
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 
 # Create FastAPI app
@@ -136,77 +118,8 @@ async def init_settings():
         S1000D_BREX_RULES = system_settings.brex_rules
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
-    """Retrieve the currently authenticated user from the access token."""
-    credentials_exception = HTTPException(
-        status_code=401,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str | None = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    user_data = await db.users.find_one({"username": username})
-    if not user_data:
-        raise credentials_exception
-    return User(**user_data)
-
-
-async def get_current_active_user(
-    current_user: User = Depends(get_current_user),
-) -> User:
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
-
-
-def require_role(required: str):
-    async def _require(current_user: User = Depends(get_current_active_user)) -> User:
-        if required not in current_user.roles:
-            raise HTTPException(status_code=403, detail="Insufficient privileges")
-        return current_user
-
-    return _require
-
-
-require_admin = require_role("admin")
-
-
-auth_router = APIRouter(prefix="/auth")
-
-
-@auth_router.post("/register")
-async def register_user(username: str = Form(...), password: str = Form(...)):
-    if await db.users.find_one({"username": username}):
-        raise HTTPException(400, "Username already exists")
-    hashed = get_password_hash(password)
-    user = User(username=username, hashed_password=hashed, roles=["user"])
-    await db.users.insert_one(user.dict())
-    return {"message": "User registered"}
-
-
-@auth_router.post("/token")
-async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-):
-    user = await authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username},
-        secret_key=SECRET_KEY,
-        expires_delta=access_token_expires,
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
-
-
-# Create API router (endpoints require authentication)
-api_router = APIRouter(prefix="/api", dependencies=[Depends(get_current_active_user)])
+# Create API router (no authentication)
+api_router = APIRouter(prefix="/api")
 
 
 def validate_module_dict(
@@ -454,7 +367,6 @@ async def set_providers(
     vision_provider: str,
     text_model: str | None = None,
     vision_model: str | None = None,
-    _: User = Depends(require_admin),
 ):
     """Set AI providers."""
     try:
@@ -551,7 +463,7 @@ async def get_document(document_id: str):
 
 
 @api_router.post("/documents/{document_id}/process")
-async def process_document(document_id: str, current_user: User = Depends(get_current_active_user)):
+async def process_document(document_id: str):
     """Process a document to create data modules."""
     try:
         # Get document
@@ -583,7 +495,7 @@ async def process_document(document_id: str, current_user: User = Depends(get_cu
         # Store data modules in database
         stored_modules = []
         for dm in data_modules:
-            entry = {"action": "create", "dmc": dm.dmc, "source_file": document.filename, "user": current_user.username, "author": "ai"}
+            entry = {"action": "create", "dmc": dm.dmc, "source_file": document.filename, "user": "system", "author": "ai"}
             dm.audit_log.append(entry)
             await db.data_modules.insert_one(dm.dict())
             stored_modules.append(dm)
@@ -615,7 +527,7 @@ async def process_document(document_id: str, current_user: User = Depends(get_cu
 
 
 @api_router.get("/documents/{document_id}/process-stream")
-async def process_document_stream(document_id: str, current_user: User = Depends(get_current_active_user)):
+async def process_document_stream(document_id: str):
     """Stream data modules one by one using Server-Sent Events."""
     try:
         doc_data = await db.documents.find_one({"id": document_id})
@@ -635,7 +547,7 @@ async def process_document_stream(document_id: str, current_user: User = Depends
                     "action": "create",
                     "dmc": dm.dmc,
                     "source_file": document.filename,
-                    "user": current_user.username,
+                    "user": "system",
                     "author": "ai",
                 }
                 dm.audit_log.append(entry)
@@ -702,7 +614,7 @@ async def export_data_module(dmc: str, format: str = "xml"):
 
 
 @api_router.put("/data-modules/{dmc}")
-async def update_data_module(dmc: str, module_data: Dict[str, Any], current_user: User = Depends(get_current_active_user)):
+async def update_data_module(dmc: str, module_data: Dict[str, Any]):
     """Update a data module."""
     try:
         # Update module in database
@@ -712,7 +624,7 @@ async def update_data_module(dmc: str, module_data: Dict[str, Any], current_user
 
         if result.matched_count == 0:
             raise HTTPException(404, "Data module not found")
-        entry = {"action": "update", "dmc": dmc, "user": current_user.username, "changes": module_data}
+        entry = {"action": "update", "dmc": dmc, "user": "system", "changes": module_data}
         await db.data_modules.update_one({"dmc": dmc}, {"$push": {"audit_log": entry}})
         await document_service.audit_service.log(entry)
 
@@ -925,7 +837,6 @@ async def get_publication_module(pm_code: str):
 async def publish_publication_module(
     pm_code: str,
     publish_options: Dict[str, Any],
-    _: User = Depends(require_admin),
 ):
     """Publish a publication module."""
     try:
@@ -1004,7 +915,6 @@ async def test_vision_provider(image_data: str, task_type: str = "caption"):
 
 
 # Include the router in the main app
-app.include_router(auth_router)
 app.include_router(api_router)
 
 

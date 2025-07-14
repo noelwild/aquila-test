@@ -338,7 +338,7 @@ const IllustrationManager = () => {
               >
                 <div className="aspect-square mb-2 bg-aquila-bg rounded overflow-hidden">
                   <img
-                    src={`${process.env.REACT_APP_API_URL}/api/icns/${icn.icn_id}/image?token=${localStorage.getItem('aquila.jwt')}`}
+                    src={`${process.env.REACT_APP_API_URL}/api/icns/${icn.icn_id}/image`}
                     alt={icn.filename}
                     className="w-full h-full object-cover"
                   />
@@ -493,7 +493,7 @@ const IllustrationManager = () => {
                     
                     <img
                       ref={imageRef}
-                      src={`${process.env.REACT_APP_API_URL}/api/icns/${selectedICN.icn_id}/image?token=${localStorage.getItem('aquila.jwt')}`}
+                      src={`${process.env.REACT_APP_API_URL}/api/icns/${selectedICN.icn_id}/image`}
                       alt={selectedICN.filename}
                       className="w-full h-auto"
                       style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}
