@@ -21,12 +21,12 @@ from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorClient
 from passlib.context import CryptContext
 
-from .ai_providers.provider_factory import ProviderFactory
-from .brex_rules import apply_brex_rules
+from ai_providers.provider_factory import ProviderFactory
+from brex_rules import apply_brex_rules
 
 # Import models
-from .models.base import ProviderEnum, SecurityLevel, SettingsModel, ValidationStatus
-from .models.document import (
+from models.base import ProviderEnum, SecurityLevel, SettingsModel, ValidationStatus
+from models.document import (
     ICN,
     DataModule,
     ProcessingTask,
