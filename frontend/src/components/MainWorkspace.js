@@ -1,7 +1,30 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FileText } from 'lucide-react';
+import { useAquila } from '../contexts/AquilaContext';
+import DocumentViewer from './DocumentViewer';
+import DataModuleViewer from './DataModuleViewer';
 
 const MainWorkspace = () => {
+  const {
+    currentDocument,
+    currentDataModule,
+    dataModules,
+    setCurrentDataModule,
+    setCurrentDocument,
+    documents,
+  } = useAquila();
+
+  const verbatim = currentDataModule
+    ? dataModules.find(
+        (dm) => dm.dmc === currentDataModule.dmc && dm.info_variant === '00'
+      )
+    : null;
+  const ste = currentDataModule
+    ? dataModules.find(
+        (dm) => dm.dmc === currentDataModule.dmc && dm.info_variant === '01'
+      )
+    : null;
+
   return (
     <div className="flex-1 flex flex-col">
       {/* Main Grid - 3x2 layout */}
@@ -10,16 +33,12 @@ const MainWorkspace = () => {
         <div className="aquila-panel">
           <div className="aquila-panel-header">
             <h3 className="text-sm font-medium">Original Document</h3>
-            <span className="text-xs text-aquila-text-muted">No document loaded</span>
+            <span className="text-xs text-aquila-text-muted">
+              {currentDocument ? currentDocument.filename : 'No document loaded'}
+            </span>
           </div>
           <div className="aquila-panel-content">
-            <div className="flex items-center justify-center h-full text-aquila-text-muted">
-              <div className="text-center">
-                <FileText size={48} className="mx-auto mb-4 opacity-50" />
-                <p>No document selected</p>
-                <p className="text-sm">Upload a document to view it here</p>
-              </div>
-            </div>
+            <DocumentViewer document={currentDocument} />
           </div>
         </div>
 
@@ -29,13 +48,7 @@ const MainWorkspace = () => {
             <span className="text-xs text-aquila-text-muted">InfoVariant 00</span>
           </div>
           <div className="aquila-panel-content">
-            <div className="flex items-center justify-center h-full text-aquila-text-muted">
-              <div className="text-center">
-                <FileText size={48} className="mx-auto mb-4 opacity-50" />
-                <p>No data module selected</p>
-                <p className="text-sm">Process a document to generate data modules</p>
-              </div>
-            </div>
+            <DataModuleViewer dataModule={verbatim} variant="verbatim" />
           </div>
         </div>
 
@@ -45,13 +58,7 @@ const MainWorkspace = () => {
             <span className="text-xs text-aquila-text-muted">InfoVariant 01</span>
           </div>
           <div className="aquila-panel-content">
-            <div className="flex items-center justify-center h-full text-aquila-text-muted">
-              <div className="text-center">
-                <FileText size={48} className="mx-auto mb-4 opacity-50" />
-                <p>No STE data module</p>
-                <p className="text-sm">STE rewriting will appear here</p>
-              </div>
-            </div>
+            <DataModuleViewer dataModule={ste} variant="ste" />
           </div>
         </div>
 
@@ -116,11 +123,30 @@ const MainWorkspace = () => {
               </button>
             </div>
           </div>
-          <div className="aquila-panel-content">
-            <div className="space-y-2">
-              <div className="text-sm text-aquila-text-muted text-center py-8">
-                No data modules available
-              </div>
+          <div className="aquila-panel-content overflow-auto">
+            <div className="space-y-1 text-sm">
+              {dataModules.length === 0 && (
+                <div className="text-aquila-text-muted text-center py-8">
+                  No data modules available
+                </div>
+              )}
+              {dataModules.map((dm) => (
+                <div
+                  key={`${dm.dmc}_${dm.info_variant}`}
+                  className={`px-2 py-1 rounded cursor-pointer ${
+                    currentDataModule?.dmc === dm.dmc && currentDataModule?.info_variant === dm.info_variant
+                      ? 'bg-aquila-hover'
+                      : 'hover:bg-aquila-hover'
+                  }`}
+                  onClick={() => {
+                    setCurrentDataModule(dm);
+                    const doc = documents.find((d) => d.id === dm.source_document_id);
+                    if (doc) setCurrentDocument(doc);
+                  }}
+                >
+                  {dm.dmc} ({dm.info_variant}) - {dm.title}
+                </div>
+              ))}
             </div>
           </div>
         </div>

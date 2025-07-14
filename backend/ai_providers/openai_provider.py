@@ -52,13 +52,30 @@ class OpenAITextProvider(TextProvider):
         try:
             return json.loads(cleaned)
         except json.JSONDecodeError:
-            match = re.search(r"{.*}", cleaned, re.DOTALL)
-            if match:
-                try:
-                    return json.loads(match.group(0))
-                except json.JSONDecodeError:
-                    pass
-            raise
+            cleaned = (
+                cleaned.replace("“", '"')
+                .replace("”", '"')
+                .replace("‘", "'")
+                .replace("’", "'")
+            )
+            cleaned = re.sub(r",\s*([}\]])", r"\1", cleaned)
+            try:
+                return json.loads(cleaned)
+            except json.JSONDecodeError:
+                match = re.search(r"{.*}", cleaned, re.DOTALL)
+                if match:
+                    try:
+                        inner = re.sub(r",\s*([}\]])", r"\1", match.group(0))
+                        inner = (
+                            inner.replace("“", '"')
+                            .replace("”", '"')
+                            .replace("‘", "'")
+                            .replace("’", "'")
+                        )
+                        return json.loads(inner)
+                    except json.JSONDecodeError:
+                        pass
+                raise
 
     async def classify_document(
         self, request: TextProcessingRequest
