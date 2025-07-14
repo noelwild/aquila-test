@@ -4,6 +4,7 @@ import asyncio
 import base64
 import json
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, List
@@ -40,6 +41,25 @@ class OpenAITextProvider(TextProvider):
         self.client = openai.AsyncOpenAI(api_key=api_key)
         self.model = model or os.environ.get("TEXT_MODEL", "gpt-4o-mini")
 
+    def _parse_json(self, text: str) -> Any:
+        """Parse JSON content from LLM responses that may include code fences."""
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r"^```(?:json)?\n", "", cleaned)
+            cleaned = cleaned.rstrip("`").rstrip()
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3].strip()
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError:
+            match = re.search(r"{.*}", cleaned, re.DOTALL)
+            if match:
+                try:
+                    return json.loads(match.group(0))
+                except json.JSONDecodeError:
+                    pass
+            raise
+
     async def classify_document(
         self, request: TextProcessingRequest
     ) -> TextProcessingResponse:
@@ -72,7 +92,7 @@ class OpenAITextProvider(TextProvider):
                 max_tokens=500,
             )
 
-            result = json.loads(response.choices[0].message.content)
+            result = self._parse_json(response.choices[0].message.content)
             processing_time = time.time() - start_time
 
             return TextProcessingResponse(
@@ -133,7 +153,7 @@ class OpenAITextProvider(TextProvider):
                 max_tokens=2000,
             )
 
-            result = json.loads(response.choices[0].message.content)
+            result = self._parse_json(response.choices[0].message.content)
             processing_time = time.time() - start_time
 
             return TextProcessingResponse(
@@ -188,7 +208,7 @@ class OpenAITextProvider(TextProvider):
                 max_tokens=1500,
             )
 
-            result = json.loads(response.choices[0].message.content)
+            result = self._parse_json(response.choices[0].message.content)
             processing_time = time.time() - start_time
 
             return TextProcessingResponse(
@@ -228,7 +248,7 @@ class OpenAITextProvider(TextProvider):
                 max_tokens=1500,
             )
 
-            result = json.loads(response.choices[0].message.content)
+            result = self._parse_json(response.choices[0].message.content)
             processing_time = time.time() - start_time
 
             return TextProcessingResponse(
@@ -342,10 +362,10 @@ class OpenAIVisionProvider(VisionProvider):
 
             content = response.choices[0].message.content
             try:
-                objects = json.loads(content)
+                objects = self._parse_json(content)
                 if not isinstance(objects, list):
                     objects = [content]
-            except:
+            except Exception:
                 objects = [content]
 
             processing_time = time.time() - start_time
@@ -398,10 +418,10 @@ class OpenAIVisionProvider(VisionProvider):
 
             content = response.choices[0].message.content
             try:
-                hotspots = json.loads(content)
+                hotspots = self._parse_json(content)
                 if not isinstance(hotspots, list):
                     hotspots = []
-            except:
+            except Exception:
                 hotspots = []
 
             processing_time = time.time() - start_time
