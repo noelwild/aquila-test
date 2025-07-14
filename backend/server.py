@@ -33,8 +33,8 @@ from models.document import (
     PublicationModule,
     UploadedDocument,
 )
-from .models.user import User
-from .services.auth import (
+from models.user import User
+from services.auth import (
     authenticate_user,
     create_access_token,
     get_password_hash,
@@ -42,7 +42,7 @@ from .services.auth import (
 )
 
 # Import services
-from .services.document_service import DocumentService
+from services.document_service import DocumentService
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
