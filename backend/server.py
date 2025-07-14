@@ -21,20 +21,20 @@ from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorClient
 from passlib.context import CryptContext
 
-from ai_providers.provider_factory import ProviderFactory
-from brex_rules import apply_brex_rules
+from backend.ai_providers.provider_factory import ProviderFactory
+from backend.brex_rules import apply_brex_rules
 
 # Import models
-from models.base import ProviderEnum, SecurityLevel, SettingsModel, ValidationStatus
-from models.document import (
+from backend.models.base import ProviderEnum, SecurityLevel, SettingsModel, ValidationStatus
+from backend.models.document import (
     ICN,
     DataModule,
     ProcessingTask,
     PublicationModule,
     UploadedDocument,
 )
-from models.user import User
-from services.auth import (
+from backend.models.user import User
+from backend.services.auth import (
     authenticate_user,
     create_access_token,
     get_password_hash,
@@ -42,7 +42,7 @@ from services.auth import (
 )
 
 # Import services
-from services.document_service import DocumentService
+from backend.services.document_service import DocumentService
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
@@ -917,7 +917,7 @@ async def publish_publication_module(
 async def test_text_provider(text: str, task_type: str = "classify"):
     """Test text provider."""
     try:
-        from ai_providers.base import TextProcessingRequest
+        from backend.ai_providers.base import TextProcessingRequest
 
         text_provider = ProviderFactory.create_text_provider()
         request = TextProcessingRequest(text=text, task_type=task_type)
@@ -941,7 +941,7 @@ async def test_text_provider(text: str, task_type: str = "classify"):
 async def test_vision_provider(image_data: str, task_type: str = "caption"):
     """Test vision provider."""
     try:
-        from ai_providers.base import VisionProcessingRequest
+        from backend.ai_providers.base import VisionProcessingRequest
 
         vision_provider = ProviderFactory.create_vision_provider()
         request = VisionProcessingRequest(image_data=image_data, task_type=task_type)

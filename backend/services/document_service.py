@@ -25,17 +25,17 @@ import re
 import logging
 from datetime import datetime
 
-from models.document import (
+from backend.models.document import (
     UploadedDocument,
     ICN,
     DataModule,
     ProcessingTask,
     PublicationModule,
 )
-from models.base import DMTypeEnum, SettingsModel, StructureType, SecurityLevel
-from ai_providers.provider_factory import ProviderFactory
-from ai_providers.base import TextProcessingRequest, VisionProcessingRequest
-from services.audit import AuditService
+from backend.models.base import DMTypeEnum, SettingsModel, StructureType, SecurityLevel
+from backend.ai_providers.provider_factory import ProviderFactory
+from backend.ai_providers.base import TextProcessingRequest, VisionProcessingRequest
+from backend.services.audit import AuditService
 
 logger = logging.getLogger(__name__)
 

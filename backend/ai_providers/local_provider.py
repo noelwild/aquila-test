@@ -12,7 +12,7 @@ import torch
 from torchvision import models, transforms
 from transformers import pipeline
 
-from ai_providers.base import (
+from .base import (
     TextProvider,
     VisionProvider,
     TextProcessingRequest,
