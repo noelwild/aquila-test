@@ -508,6 +508,11 @@ def main():
     logger.warning("AQUILA S1000D-AI BACKEND TEST SUITE")
     logger.warning("=" * 80 + "\n")
     
+    # Authenticate first
+    if not authenticate():
+        logger.error("Authentication failed. Cannot continue with tests.")
+        return
+    
     # Run all tests
     test_health_check()
     test_provider_configuration()
