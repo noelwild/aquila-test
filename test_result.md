@@ -386,11 +386,14 @@ frontend:
     file: "frontend/src/components/ProjectModal.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Allows creating new projects and selecting existing ones"
+      - working: true
+        agent: "testing"
+        comment: "Project modal opens correctly, displays project selection interface, allows creating new projects with name input, and project switching functionality works properly."
 
   - task: "Upload Confirmation and Start Button"
     implemented: true
@@ -398,11 +401,14 @@ frontend:
     file: "frontend/src/components/Toolbar.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Added upload success alerts and a Start button disabled until BREX rules are set"
+      - working: true
+        agent: "testing"
+        comment: "Upload functionality working correctly with file input accepting multiple file types (.pdf, .docx, .pptx, .xlsx, .txt, .jpg, .jpeg, .png, .gif, .bmp, .tiff). Start button is enabled and ready for document processing when conditions are met."
 
 metadata:
   created_by: "main_agent"
