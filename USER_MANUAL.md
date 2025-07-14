@@ -2,14 +2,14 @@
 **Version 1.0.0 (July 2025)**
 
 
-This manual provides step-by-step instructions for using every major feature of the Aquila S1000D-AI prototype. The system consists of a FastAPI backend and a React-based web interface that together help you ingest documents, generate S1000D data modules, and publish technical manuals.
+This manual provides step-by-step instructions for using every major feature of the Aquila S1000D-AI prototype. The system consists of a FastAPI backend with either the original React interface or a lightweight HTML/JS page that together help you ingest documents, generate S1000D data modules, and publish technical manuals.
 
 ## 1. Installation & Setup
 1. Install Python dependencies:
    ```bash
    pip install -r backend/requirements.txt
    ```
-2. Install the frontend packages:
+2. (Optional) install the original React frontend:
    ```bash
    cd frontend
    yarn install
@@ -18,21 +18,14 @@ This manual provides step-by-step instructions for using every major feature of 
 3. Copy `.env.example` in both `backend/` and `frontend/` to `.env` and supply API keys and model names. The system works with OpenAI, Anthropic, or local Hugging Face models.
 4. If you change values in `frontend/.env` while `yarn start` is running, restart the command (or use `npm start`) so the updated variables load.
 5. Start the services in separate terminals:
+   # Alternatively open simple_frontend/index.html for a lightweight interface
    ```bash
-   uvicorn backend.server:app --reload --port 8001
-   cd frontend && yarn start
+   uvicorn backend.websocket_server:app --reload --port 8001
+   open simple_frontend/index.html in your browser
    ```
-   The UI opens at `http://localhost:3000` and connects to the backend on port `8001`.
+   Open the HTML file directly and it will connect to the WebSocket server on port `8001`.
 
-## 2. Authentication
-Most API routes require a user account. Register and obtain a token:
-```bash
-curl -X POST -F "username=test" -F "password=secret" http://localhost:8001/auth/register
-curl -X POST -F "username=test" -F "password=secret" http://localhost:8001/auth/token
-```
-Include the returned token in the `Authorization` header for API calls.
-
-## 3. Configuring AI Providers
+## 2. Configuring AI Providers
 Open the **Provider** modal in the toolbar or call `/api/providers/set` to choose OpenAI, Anthropic, or local models for text and vision tasks. You can also specify model names. The `/api/providers` endpoint returns the current configuration.
 
 ## 4. Uploading Documents
@@ -69,7 +62,7 @@ Download the built-in rule set from `/api/brex-default` to customize validation 
 Check `/api/health` for a status report that includes current provider configuration and timestamp.
 
 ## 14. Security Considerations
-Authentication tokens are signed with `SECRET_KEY` from `.env`. Avoid sending sensitive documents to external providers unless you use the local models. Adjust CORS origins and token expiration values in the settings for better security.
+This simplified setup has no authentication. Avoid exposing it to the public internet.
 
 ## 15. Troubleshooting & Testing
 Run backend tests with `pytest -q` and frontend tests using `yarn test`. Review `test_result.md` for the testing log. If document processing fails, check the backend console output for errors and verify that provider API keys are correct.

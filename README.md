@@ -17,7 +17,6 @@ Aquila follows the S1000D specification for data and publication modules, enabli
 - **Illustrations** – manage ICNs with captioning, object detection and hotspot suggestions
 - **Publication Modules** – drag-and-drop builder with export options (XML, HTML, PDF)
 - **Provider Switching** – dynamically select OpenAI, Anthropic or local models for text and vision tasks
-- **Authentication** – register users and secure API access with JWT tokens
 - **Module Validation** – verify data modules against BREX and XSD rules
 - **BREX Rules API** – download the built-in rule set or store custom rules
 - **BREX Correction** – automatically suggest fixes for validation errors using AI
@@ -31,6 +30,7 @@ Because Aquila is an experimental system, many details are simplified compared t
 
 ## Architecture Overview
 Aquila is divided into two major parts: a FastAPI backend that provides REST endpoints for document and module management, and a React frontend that interacts with those endpoints. The backend is written entirely in Python and relies on MongoDB for persistent storage. Mongo collections store uploaded documents, data modules, publication modules, and illustrations. Each record contains metadata such as creation timestamps, validation results, and AI processing status. The server also maintains a global settings object that tracks the currently selected AI providers and other configuration options. This settings object can be modified at runtime via an API endpoint, allowing administrators to switch providers without downtime.
+This repository now also contains a lightweight version using WebSocket communication and SQLite for local storage. The new server is defined in `backend/websocket_server.py` and pairs with a small HTML/JS interface located in `simple_frontend`. No authentication is required for this mode.
 
 All AI functionality is abstracted behind a provider factory. For text-related tasks, the system can classify documents, extract structured data, and rewrite paragraphs to STE. For vision tasks, it can generate captions, identify objects, and propose interactive hotspots on images. The factory exposes common interfaces so that the rest of the code does not need to know which provider implementation is active. The OpenAI provider uses the GPT family for text tasks and the vision API for image tasks, while the Anthropic provider wraps the Claude models. The local provider now loads open-source models from Hugging Face—`Goekdeniz-Guelmez/Josiefied-Qwen3-30B-A3B-abliterated-v2` for text and `Qwen/Qwen-VL-Chat` for captions—so developers can run the system without external API keys. New providers can be added by implementing the same base classes and registering them with the factory.
 
@@ -42,6 +42,7 @@ The backend resides under the `backend` directory. The entry point is `server.py
 * `/api/health` – simple health check that also returns provider configuration
 * `/api/settings` – get or update global system settings
 * `/api/providers` – retrieve available providers and the current selection
+In addition to this REST interface, `backend/websocket_server.py` provides a simplified WebSocket server backed by SQLite. It can be used with the HTML page under `simple_frontend` for quick local deployments.
 * `/api/providers/set` – change the active text and vision providers
 * `/api/documents` – list all uploaded documents
 * `/api/documents/upload` – upload a new file for processing
@@ -149,20 +150,6 @@ yarn start
 ```
 
 The React application will open at `http://localhost:3000` and connect to the FastAPI backend on port `8001`. If you do not have AI provider keys you can switch to the “local” provider in the settings modal to test the user interface without real AI calls.
-
-### Authentication
-Most API routes now require a valid access token. Register a user and obtain a token using the authentication endpoints:
-
-```bash
-curl -X POST -F "username=test" -F "password=secret" http://localhost:8001/auth/register
-curl -X POST -F "username=test" -F "password=secret" http://localhost:8001/auth/token
-```
-
-Include the returned token in the `Authorization` header when calling `/api` routes:
-
-```bash
-curl -H "Authorization: Bearer <token>" http://localhost:8001/api/settings
-```
 
 ## Usage Overview
 Once the servers are running you can upload a document through the toolbar. The sidebar will list the uploaded file, at which point you can select it and click “Process.” The backend will extract text, analyze it with the configured provider, and generate new data modules. These modules show up in the sidebar and can be opened in the workspace. Use the data module viewer to inspect the generated content and run validation. The XML editor provides full markup access if you need to fix tags or add attributes. When you have multiple modules prepared, create a publication module from the sidebar and arrange the modules in a hierarchy. Clicking the publish button allows you to choose variants and output formats, after which a package is generated. The backend now builds XML, HTML and PDF files and returns the location of the packaged ZIP archive, providing a clear hook for integrating more advanced export tooling.
