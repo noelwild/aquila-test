@@ -16,6 +16,8 @@ import {
   Play
 } from 'lucide-react';
 import ProjectModal from './ProjectModal';
+import AIProviderModal from './AIProviderModal';
+import PublishModal from './PublishModal';
 
 const Toolbar = () => {
   const navigate = useNavigate();
