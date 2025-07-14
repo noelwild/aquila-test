@@ -338,7 +338,7 @@ def test_data_module_management(dmc_list):
     
     # Test get all data modules
     try:
-        response = requests.get(f"{API_BASE_URL}/data-modules")
+        response = requests.get(f"{API_BASE_URL}/data-modules", headers=get_auth_headers())
         print_test_result("Get Data Modules", response.status_code == 200, 
                          f"Found {len(response.json())} data modules")
     except Exception as e:
@@ -347,7 +347,7 @@ def test_data_module_management(dmc_list):
     # Test get specific data module
     dmc = dmc_list[0]
     try:
-        response = requests.get(f"{API_BASE_URL}/data-modules/{dmc}")
+        response = requests.get(f"{API_BASE_URL}/data-modules/{dmc}", headers=get_auth_headers())
         print_test_result(f"Get Data Module {dmc}", response.status_code == 200, response.json())
     except Exception as e:
         print_test_result(f"Get Data Module {dmc}", False, error=str(e))
@@ -360,7 +360,8 @@ def test_data_module_management(dmc_list):
         }
         response = requests.put(
             f"{API_BASE_URL}/data-modules/{dmc}",
-            json=update_data
+            json=update_data,
+            headers=get_auth_headers()
         )
         print_test_result(f"Update Data Module {dmc}", response.status_code == 200, response.json())
     except Exception as e:
@@ -368,10 +369,18 @@ def test_data_module_management(dmc_list):
     
     # Test validate data module
     try:
-        response = requests.post(f"{API_BASE_URL}/validate/{dmc}")
+        response = requests.post(f"{API_BASE_URL}/validate/{dmc}", headers=get_auth_headers())
         print_test_result(f"Validate Data Module {dmc}", response.status_code == 200, response.json())
     except Exception as e:
         print_test_result(f"Validate Data Module {dmc}", False, error=str(e))
+
+    # Test export data module (XML)
+    try:
+        response = requests.get(f"{API_BASE_URL}/data-modules/{dmc}/export?format=xml", headers=get_auth_headers())
+        print_test_result(f"Export Data Module {dmc} as XML", response.status_code == 200, 
+                         f"XML content length: {len(response.content)} bytes")
+    except Exception as e:
+        print_test_result(f"Export Data Module {dmc} as XML", False, error=str(e))
 
 # 6. ICN Management
 def test_icn_management():
