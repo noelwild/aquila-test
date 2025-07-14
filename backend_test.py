@@ -131,7 +131,7 @@ def test_provider_configuration():
     
     # Get available providers
     try:
-        response = requests.get(f"{API_BASE_URL}/providers")
+        response = requests.get(f"{API_BASE_URL}/providers", headers=get_auth_headers())
         print_test_result("Get Providers", response.status_code == 200, response.json())
     except Exception as e:
         print_test_result("Get Providers", False, error=str(e))
@@ -140,7 +140,8 @@ def test_provider_configuration():
     try:
         response = requests.post(
             f"{API_BASE_URL}/providers/set",
-            params={"text_provider": "openai", "vision_provider": "openai"}
+            params={"text_provider": "openai", "vision_provider": "openai"},
+            headers=get_auth_headers()
         )
         print_test_result("Set Provider to OpenAI", response.status_code == 200, response.json())
     except Exception as e:
@@ -150,7 +151,8 @@ def test_provider_configuration():
     try:
         response = requests.post(
             f"{API_BASE_URL}/providers/set",
-            params={"text_provider": "anthropic", "vision_provider": "anthropic"}
+            params={"text_provider": "anthropic", "vision_provider": "anthropic"},
+            headers=get_auth_headers()
         )
         print_test_result("Set Provider to Anthropic", response.status_code == 200, response.json())
     except Exception as e:
@@ -160,7 +162,8 @@ def test_provider_configuration():
     try:
         response = requests.post(
             f"{API_BASE_URL}/providers/set",
-            params={"text_provider": "openai", "vision_provider": "openai"}
+            params={"text_provider": "openai", "vision_provider": "openai"},
+            headers=get_auth_headers()
         )
         print_test_result("Reset Provider to OpenAI", response.status_code == 200, response.json())
     except Exception as e:
