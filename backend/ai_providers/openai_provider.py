@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import json
+import logging
 import os
 import re
 import time
@@ -27,6 +28,8 @@ from .base import (
 # in the current execution environment.
 load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=True)
 
+logger = logging.getLogger(__name__)
+
 
 class OpenAITextProvider(TextProvider):
     """OpenAI text processing provider."""
@@ -42,40 +45,41 @@ class OpenAITextProvider(TextProvider):
         self.model = model or os.environ.get("TEXT_MODEL", "gpt-4o-mini")
 
     def _parse_json(self, text: str) -> Any:
-        """Parse JSON content from LLM responses that may include code fences."""
+        """Parse JSON content from LLM responses that may include code fences.
+        If parsing fails, an empty dict is returned."""
         cleaned = text.strip()
         if cleaned.startswith("```"):
             cleaned = re.sub(r"^```(?:json)?\n", "", cleaned)
             cleaned = cleaned.rstrip("`").rstrip()
             if cleaned.endswith("```"):
                 cleaned = cleaned[:-3].strip()
+
+        cleaned = (
+            cleaned.replace("“", '"')
+            .replace("”", '"')
+            .replace("‘", "'")
+            .replace("’", "'")
+        )
+        cleaned = re.sub(r",\s*([}\]])", r"\1", cleaned)
+
         try:
             return json.loads(cleaned)
         except json.JSONDecodeError:
-            cleaned = (
-                cleaned.replace("“", '"')
-                .replace("”", '"')
-                .replace("‘", "'")
-                .replace("’", "'")
-            )
-            cleaned = re.sub(r",\s*([}\]])", r"\1", cleaned)
-            try:
-                return json.loads(cleaned)
-            except json.JSONDecodeError:
-                match = re.search(r"{.*}", cleaned, re.DOTALL)
-                if match:
-                    try:
-                        inner = re.sub(r",\s*([}\]])", r"\1", match.group(0))
-                        inner = (
-                            inner.replace("“", '"')
-                            .replace("”", '"')
-                            .replace("‘", "'")
-                            .replace("’", "'")
-                        )
-                        return json.loads(inner)
-                    except json.JSONDecodeError:
-                        pass
-                raise
+            match = re.search(r"{.*}", cleaned, re.DOTALL)
+            if match:
+                try:
+                    inner = re.sub(r",\s*([}\]])", r"\1", match.group(0))
+                    inner = (
+                        inner.replace("“", '"')
+                        .replace("”", '"')
+                        .replace("‘", "'")
+                        .replace("’", "'")
+                    )
+                    return json.loads(inner)
+                except json.JSONDecodeError:
+                    pass
+            logger.warning("Failed to parse JSON from AI response")
+            return {}
 
     async def classify_document(
         self, request: TextProcessingRequest
