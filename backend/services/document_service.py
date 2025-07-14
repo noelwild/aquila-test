@@ -32,10 +32,10 @@ from models.document import (
     ProcessingTask,
     PublicationModule,
 )
-from ..models.base import DMTypeEnum, SettingsModel, StructureType, SecurityLevel
-from ..ai_providers.provider_factory import ProviderFactory
-from ..ai_providers.base import TextProcessingRequest, VisionProcessingRequest
-from ..services.audit import AuditService
+from models.base import DMTypeEnum, SettingsModel, StructureType, SecurityLevel
+from ai_providers.provider_factory import ProviderFactory
+from ai_providers.base import TextProcessingRequest, VisionProcessingRequest
+from services.audit import AuditService
 
 logger = logging.getLogger(__name__)
 
