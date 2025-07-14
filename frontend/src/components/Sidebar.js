@@ -23,7 +23,15 @@ const Sidebar = () => {
     }));
   };
 
-  const { dataModules, documents, icns } = useAquila();
+  const {
+    dataModules,
+    documents,
+    icns,
+    setCurrentDataModule,
+    setCurrentDocument,
+    currentDataModule,
+    currentDocument,
+  } = useAquila();
 
   const getLEDClassName = (status) => {
     switch (status) {
@@ -79,8 +87,17 @@ const Sidebar = () => {
             <div className="ml-6 mt-2 space-y-1">
               {dataModules.map((dm) => (
                 <div
-                  key={dm.dmc}
-                  className="aquila-tree-item cursor-pointer"
+                  key={`${dm.dmc}_${dm.info_variant}`}
+                  onClick={() => {
+                    setCurrentDataModule(dm);
+                    const doc = documents.find((d) => d.id === dm.source_document_id);
+                    if (doc) setCurrentDocument(doc);
+                  }}
+                  className={`aquila-tree-item cursor-pointer ${
+                    currentDataModule?.dmc === dm.dmc && currentDataModule?.info_variant === dm.info_variant
+                      ? 'bg-aquila-hover'
+                      : ''
+                  }`}
                 >
                   <div className="flex items-center gap-2 flex-1">
                     <span className="text-sm">{getDMTypeIcon(dm.dm_type)}</span>
@@ -122,7 +139,10 @@ const Sidebar = () => {
               {documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="aquila-tree-item cursor-pointer"
+                  onClick={() => setCurrentDocument(doc)}
+                  className={`aquila-tree-item cursor-pointer ${
+                    doc.id === currentDocument?.id ? 'bg-aquila-hover' : ''
+                  }`}
                 >
                   <div className="flex items-center gap-2 flex-1">
                     <FileText size={16} />

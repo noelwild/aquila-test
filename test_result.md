@@ -571,3 +571,4 @@ agent_communication:
 
     OVERALL ASSESSMENT:
     The Aquila S1000D-AI frontend is fully functional with no critical issues. All major features are working correctly, and the system is ready for production use. The professional dark theme UI, comprehensive functionality, and seamless integration with the backend make this a complete S1000D document processing solution."
+- agent: "main"\n  message: "Added data module selection handlers and dynamic viewers; improved JSON parsing heuristics."
