@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 import openai
 from dotenv import load_dotenv
 
-from ai_providers.base import (
+from .base import (
     TextProcessingRequest,
     TextProcessingResponse,
     TextProvider,
