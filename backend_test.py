@@ -22,7 +22,7 @@ if not os.getenv("AQUILA_INTEGRATION_TESTS"):
 logger = logging.getLogger(__name__)
 
 # API Base URL
-API_BASE_URL = "https://e79d7fba-faa5-470f-8a4a-3841cc19f48a.preview.emergentagent.com/api"
+API_BASE_URL = "http://localhost:8001/api"
 
 # API Keys (read from environment if needed)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
