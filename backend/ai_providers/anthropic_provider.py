@@ -4,8 +4,8 @@ import anthropic
 import base64
 import time
 from typing import Dict, Any, List
-from .base import TextProvider, VisionProvider, TextProcessingRequest, TextProcessingResponse
-from .base import VisionProcessingRequest, VisionProcessingResponse
+from ai_providers.base import TextProvider, VisionProvider, TextProcessingRequest, TextProcessingResponse
+from ai_providers.base import VisionProcessingRequest, VisionProcessingResponse
 import os
 import json
 import asyncio
