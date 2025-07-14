@@ -614,6 +614,48 @@ async def process_document(document_id: str, current_user: User = Depends(get_cu
         raise HTTPException(500, f"Error processing document: {str(e)}")
 
 
+@api_router.get("/documents/{document_id}/process-stream")
+async def process_document_stream(document_id: str, current_user: User = Depends(get_current_active_user)):
+    """Stream data modules one by one using Server-Sent Events."""
+    try:
+        doc_data = await db.documents.find_one({"id": document_id})
+        if not doc_data:
+            raise HTTPException(404, "Document not found")
+
+        document = UploadedDocument(**doc_data)
+        text_content = await document_service.extract_text_from_document(document)
+        images = await document_service.extract_images_from_document(document)
+        for image in images:
+            processed_image = await document_service.process_image_with_ai(image)
+            await db.icns.insert_one(processed_image.dict())
+
+        async def event_generator():
+            async for dm in document_service.process_document_streaming(document, text_content):
+                entry = {
+                    "action": "create",
+                    "dmc": dm.dmc,
+                    "source_file": document.filename,
+                    "user": current_user.username,
+                    "author": "ai",
+                }
+                dm.audit_log.append(entry)
+                await db.data_modules.insert_one(dm.dict())
+                await document_service.audit_service.log(entry)
+                yield f"event: module\ndata: {dm.json()}\n\n"
+
+            await document_service.refresh_cross_references()
+            await db.documents.update_one(
+                {"id": document_id},
+                {"$set": {"processing_status": "completed", "updated_at": datetime.utcnow()}},
+            )
+            yield "event: end\ndata: done\n\n"
+
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+    except Exception as e:
+        logger.error(f"Error processing document stream: {str(e)}")
+        raise HTTPException(500, f"Error processing document: {str(e)}")
+
+
 # Data Module endpoints
 @api_router.get("/data-modules")
 async def get_data_modules():

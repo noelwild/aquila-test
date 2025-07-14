@@ -121,6 +121,7 @@ function AquilaProvider({ children }) {
   const [showAIProviderModal, setShowAIProviderModal] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
   const [settings, setSettings] = useState(null);
   const [brexReady, setBrexReady] = useState(false);
   const [projectName, setProjectName] = useState(
@@ -245,6 +246,35 @@ function AquilaProvider({ children }) {
     }
   };
 
+  const processDocumentStream = (documentId) => {
+    setProcessing(true);
+    setProcessingProgress(0);
+    return new Promise((resolve, reject) => {
+      const url = `${api.defaults.baseURL}/api/documents/${documentId}/process-stream`;
+      const es = new EventSource(url);
+      es.addEventListener('module', async (e) => {
+        const dm = JSON.parse(e.data);
+        setDataModules((prev) => [...prev, dm]);
+        setCurrentDataModule(dm);
+        setProcessingProgress((p) => Math.min(p + 50, 100));
+      });
+      es.addEventListener('end', () => {
+        es.close();
+        loadDataModules();
+        loadICNs();
+        setProcessing(false);
+        setProcessingProgress(100);
+        resolve();
+      });
+      es.onerror = (err) => {
+        console.error('SSE error', err);
+        es.close();
+        setProcessing(false);
+        reject(err);
+      };
+    });
+  };
+
   const updateDataModule = async (dmc, updates) => {
     try {
       await api.put(`/api/data-modules/${dmc}`, updates);
@@ -340,6 +370,7 @@ function AquilaProvider({ children }) {
     showAIProviderModal,
     showPublishModal,
     processing,
+    processingProgress,
     aiProviders,
     locked,
     projectName,
@@ -354,6 +385,7 @@ function AquilaProvider({ children }) {
     setLocked,
     uploadDocument,
     processDocument,
+    processDocumentStream,
     updateDataModule,
     updateAIProviders,
     deleteDataModule,
